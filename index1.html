@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CipherLab — Encode and Decode Secret Messages</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #1f6feb;
+      --accent-hover: #388bfd;
+      --accent-bg: #0d2039;
+      --accent-border: #1f4170;
+      --mono: 'Courier New', monospace;
+      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; padding: 2rem 1rem; }
+    .container { max-width: 760px; margin: 0 auto; }
+
+    header { margin-bottom: 2.5rem; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; background: #0d2039; color: #388bfd; border: 1px solid #1f4170; margin-bottom: 1rem; }
+    h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+    h1 span { color: #388bfd; }
+    .subtitle { color: var(--muted); font-size: 1rem; line-height: 1.6; }
+
+    .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.6rem; }
+
+    .modes { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+    .mode-btn { font-size: 13px; padding: 7px 20px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); cursor: pointer; font-family: var(--sans); font-weight: 500; transition: all 0.15s; }
+    .mode-btn.active { background: var(--accent-bg); color: var(--accent-hover); border-color: var(--accent-border); }
+
+    .ciphers { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .cipher-btn { font-size: 12px; padding: 5px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; font-family: var(--mono); transition: all 0.15s; }
+    .cipher-btn.active { border-color: #388bfd; color: #388bfd; background: var(--accent-bg); }
+    .cipher-btn:hover:not(.active) { border-color: var(--muted); color: var(--text); }
+
+    .shift-row { display: flex; align-items: center; gap: 12px; margin-bottom: 1.25rem; }
+    .shift-row label { font-size: 13px; color: var(--muted); min-width: 48px; }
+    .shift-row input[type=range] { flex: 1; accent-color: var(--accent-hover); }
+    .shift-val { font-size: 14px; font-weight: 600; font-family: var(--mono); color: var(--text); min-width: 24px; }
+
+    .key-row { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; }
+    .key-row label { font-size: 13px; color: var(--muted); min-width: 64px; }
+    .key-input { background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: var(--mono); font-size: 14px; padding: 8px 12px; border-radius: 6px; width: 200px; }
+    .key-input:focus { outline: none; border-color: #388bfd; }
+
+    textarea { width: 100%; min-height: 100px; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: var(--mono); font-size: 14px; padding: 12px; border-radius: 8px; resize: vertical; margin-bottom: 1.25rem; }
+    textarea:focus { outline: none; border-color: #388bfd; }
+
+    .output-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 0.75rem; min-height: 60px; }
+    .output-text { font-family: var(--mono); font-size: 14px; color: var(--text); line-height: 1.6; word-break: break-all; }
+
+    .copy-btn { font-size: 12px; padding: 5px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; font-family: var(--sans); transition: all 0.15s; margin-bottom: 1.5rem; }
+    .copy-btn:hover { border-color: var(--muted); color: var(--text); }
+
+    .wheel-wrap { margin-bottom: 1.25rem; }
+    .wheel { display: flex; gap: 3px; flex-wrap: wrap; }
+    .letter { width: 26px; height: 34px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 4px; font-family: var(--mono); }
+    .letter .orig { font-size: 9px; color: var(--muted); }
+    .letter .shifted { font-size: 13px; font-weight: 600; color: var(--text); }
+    .letter.hl { background: var(--accent-bg); }
+    .letter.hl .shifted { color: #388bfd; }
+
+    .info-box { border-left: 3px solid #388bfd; background: var(--accent-bg); padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 13px; color: #7eb8f7; line-height: 1.7; }
+
+    footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); text-align: center; }
+    footer a { color: #388bfd; text-decoration: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="badge">🔐 Cryptography Project</div>
+    <h1>Cipher<span>Lab</span></h1>
+    <p class="subtitle">An interactive encryption tool. Pick a cipher method, type your message, and encode or decode it instantly. Built to explore the foundations of cryptography.</p>
+  </header>
+
+  <p class="section-label">Mode</p>
+  <div class="modes">
+    <button class="mode-btn active" onclick="setMode('encode')" id="mode-encode">Encode</button>
+    <button class="mode-btn" onclick="setMode('decode')" id="mode-decode">Decode</button>
+  </div>
+
+  <p class="section-label">Cipher method</p>
+  <div class="ciphers">
+    <button class="cipher-btn active" onclick="setCipher('caesar')" id="c-caesar">Caesar</button>
+    <button class="cipher-btn" onclick="setCipher('rot13')" id="c-rot13">ROT13</button>
+    <button class="cipher-btn" onclick="setCipher('atbash')" id="c-atbash">Atbash</button>
+    <button class="cipher-btn" onclick="setCipher('vigenere')" id="c-vigenere">Vigenere</button>
+    <button class="cipher-btn" onclick="setCipher('binary')" id="c-binary">Binary</button>
+  </div>
+
+  <div id="shift-ctrl" class="shift-row">
+    <label>Shift</label>
+    <input type="range" min="1" max="25" value="3" step="1" id="shift-slider" oninput="document.getElementById('shift-num').innerText=this.value; run()">
+    <span class="shift-val" id="shift-num">3</span>
+  </div>
+
+  <div id="key-ctrl" class="key-row" style="display:none;">
+    <label>Key word</label>
+    <input class="key-input" type="text" id="vig-key" placeholder="e.g. SECRET" oninput="run()" value="SECRET">
+  </div>
+
+  <p class="section-label">Your message</p>
+  <textarea id="input-text" placeholder="Type your message here..." oninput="run()">Hello World</textarea>
+
+  <p class="section-label">Result</p>
+  <div class="output-box">
+    <div class="output-text" id="output-text"></div>
+  </div>
+  <button class="copy-btn" onclick="copyOut()" id="copy-btn">Copy result</button>
+
+  <div id="wheel-wrap" class="wheel-wrap">
+    <p class="section-label">Cipher alphabet</p>
+    <div class="wheel" id="wheel"></div>
+  </div>
+
+  <div class="info-box" id="info-box"></div>
+</div>
+
+<footer>
+  <p>CipherLab — Built to explore cryptography · <a href="https://github.com/issamanisb-commits/cipherlab">View on GitHub</a></p>
+</footer>
+
+<script>
+let mode = 'encode';
+let cipher = 'caesar';
+
+const infos = {
+  caesar: 'Caesar cipher: each letter is shifted a fixed number of positions in the alphabet. Julius Caesar used a shift of 3 to send secret military messages. It is one of the oldest known encryption techniques, dating back to around 58 BC.',
+  rot13: 'ROT13: a special Caesar cipher with a shift of exactly 13. Because the alphabet has 26 letters, encoding and decoding use the exact same operation. It is widely used in online forums to hide spoilers.',
+  atbash: 'Atbash cipher: A becomes Z, B becomes Y, C becomes X, and so on. The entire alphabet is reversed. Originally used in ancient Hebrew texts and appears in the Bible to encode names and words.',
+  vigenere: 'Vigenere cipher: uses a keyword to apply a different shift to each letter of the message. Much harder to crack than Caesar because the shift changes with every character. Used widely between the 1500s and 1800s.',
+  binary: 'Binary encoding: converts each character into its 8-bit binary representation using only 1s and 0s. This is the most fundamental level of how all computers store and transmit text data.'
+};
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('mode-encode').classList.toggle('active', m === 'encode');
+  document.getElementById('mode-decode').classList.toggle('active', m === 'decode');
+  run();
+}
+
+function setCipher(c) {
+  cipher = c;
+  document.querySelectorAll('.cipher-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('c-' + c).classList.add('active');
+  document.getElementById('shift-ctrl').style.display = c === 'caesar' ? 'flex' : 'none';
+  document.getElementById('key-ctrl').style.display = c === 'vigenere' ? 'flex' : 'none';
+  document.getElementById('wheel-wrap').style.display = (c === 'binary' || c === 'vigenere') ? 'none' : 'block';
+  document.getElementById('info-box').innerText = infos[c];
+  run();
+  if (c !== 'binary' && c !== 'vigenere') buildWheel();
+}
+
+function caesar(text, shift, enc) {
+  const s = enc ? shift : (26 - shift);
+  return text.split('').map(ch => {
+    if (ch.match(/[a-z]/)) return String.fromCharCode(((ch.charCodeAt(0) - 97 + s) % 26) + 97);
+    if (ch.match(/[A-Z]/)) return String.fromCharCode(((ch.charCodeAt(0) - 65 + s) % 26) + 65);
+    return ch;
+  }).join('');
+}
+
+function atbash(text) {
+  return text.split('').map(ch => {
+    if (ch.match(/[a-z]/)) return String.fromCharCode(122 - (ch.charCodeAt(0) - 97));
+    if (ch.match(/[A-Z]/)) return String.fromCharCode(90 - (ch.charCodeAt(0) - 65));
+    return ch;
+  }).join('');
+}
+
+function vigenere(text, key, enc) {
+  key = key.toUpperCase().replace(/[^A-Z]/g, '') || 'A';
+  let ki = 0;
+  return text.split('').map(ch => {
+    const isLower = ch.match(/[a-z]/);
+    const isUpper = ch.match(/[A-Z]/);
+    if (!isLower && !isUpper) return ch;
+    const base = isLower ? 97 : 65;
+    const shift = key.charCodeAt(ki % key.length) - 65;
+    ki++;
+    const s = enc ? shift : (26 - shift);
+    return String.fromCharCode(((ch.charCodeAt(0) - base + s) % 26) + base);
+  }).join('');
+}
+
+function toBinary(text) {
+  return text.split('').map(c => c.charCodeAt(0).toString(2).padStart(8, '0')).join(' ');
+}
+
+function fromBinary(text) {
+  return text.trim().split(/\s+/).map(b => {
+    const n = parseInt(b, 2);
+    return isNaN(n) ? '?' : String.fromCharCode(n);
+  }).join('');
+}
+
+function run() {
+  const text = document.getElementById('input-text').value;
+  const shift = parseInt(document.getElementById('shift-slider').value);
+  const key = document.getElementById('vig-key').value;
+  const enc = mode === 'encode';
+  let result = '';
+
+  if (cipher === 'caesar') result = caesar(text, shift, enc);
+  else if (cipher === 'rot13') result = caesar(text, 13, true);
+  else if (cipher === 'atbash') result = atbash(text);
+  else if (cipher === 'vigenere') result = vigenere(text, key, enc);
+  else if (cipher === 'binary') result = enc ? toBinary(text) : fromBinary(text);
+
+  document.getElementById('output-text').innerText = result;
+  if (cipher !== 'binary' && cipher !== 'vigenere') buildWheel();
+}
+
+function buildWheel() {
+  const shift = cipher === 'rot13' ? 13 : cipher === 'atbash' ? 0 : parseInt(document.getElementById('shift-slider').value);
+  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const input = document.getElementById('input-text').value.toUpperCase();
+  const highlighted = new Set(input.replace(/[^A-Z]/g, '').split(''));
+  document.getElementById('wheel').innerHTML = alpha.map(ch => {
+    let shifted;
+    if (cipher === 'atbash') shifted = String.fromCharCode(90 - (ch.charCodeAt(0) - 65));
+    else shifted = String.fromCharCode(((ch.charCodeAt(0) - 65 + shift) % 26) + 65);
+    const hl = highlighted.has(ch) ? ' hl' : '';
+    return `<div class="letter${hl}"><span class="orig">${ch}</span><span class="shifted">${shifted}</span></div>`;
+  }).join('');
+}
+
+function copyOut() {
+  const text = document.getElementById('output-text').innerText;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.innerText = 'Copied!';
+    setTimeout(() => btn.innerText = 'Copy result', 1500);
+  });
+}
+
+setCipher('caesar');
+run();
+</script>
+</body>
+</html>
