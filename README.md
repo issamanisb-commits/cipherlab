@@ -69,6 +69,6 @@ Built as part of my application to the **INSA Cybersecurity Summer Camp** (Ethio
 
 ## Author
 
-**[Your Name]**
+**Issam Anis**
 Aspiring cybersecurity professional | Ethiopia
-[Your email]
+Issamanisb@gmail.com
